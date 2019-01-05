@@ -1,37 +1,59 @@
-#include "a4.h"
-#include <assert.h>
-#include <stdlib.h>
+/* MvM, 20 Game */
+
 #include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
 
-int main(int argc, char **argv) {
-  // Process input parameters
-  if (argc!=6)
-    {
-      printf("Usage ./evolve in_file out_file num_gen p_size rate\n");
-      return 1;
-    }
-  const char *input_file = argv[1];
-  const char *output_file = argv[2];
+int  score;   /* Globals */
+char in[20];
 
-  int num_generations = atoi(argv[3]);
-  int population_size = atoi(argv[4]);
+int user(void)
+{
+ int i=0;
+ while(i!=1 && i!=2){
+    printf("We are at %-2d, add 1 or 2 ? ",score);
+    fgets(in,10,stdin);
+    i=atoi(in);
+  };
+ return(i);
+};
 
-  double mutation_rate = atof(argv[5]);
 
-  // Read image.
-  PPM_IMAGE *goal = read_ppm(input_file);
-  printf("\nFile %s:\n %dx%d, max color %d, pixels to mutate %d\n",
-	 input_file, goal->width, goal->height, goal->max_color, (int)(mutation_rate/100*goal->width*goal->height));
+// Given current score return 1 or 2
+int computer(void)
+{
 
-  // Compute image
-  PPM_IMAGE *new_image =
-    evolve_image(goal, num_generations, population_size, mutation_rate);
+    int i;
+    int rem = score % 3;
 
-  // Write image
-  write_ppm(output_file, new_image);
-  // Free memory
-  free_image(goal);
-  free_image(new_image);
+    if (rem == 0) i = 2;
+    else if (rem == 1) i = 1;
+    else i = rand() % 2 + 1;
 
-  return (0);
-}
+    printf("Computer adds %d\n",i);
+    return(i);
+};
+
+
+int main(void)
+{
+  int i;
+  srand(time(NULL));// Init random
+  setvbuf(stdout, NULL, _IONBF, 0);// THIS LINE IS FOR WINDOWS ECLIPSE
+  printf(" Who says first 20 \n \n");
+  score=0;
+  i=0;
+  while(i!=1 && i!=2){
+    printf("Who goes first: you=1 computer=2 ? ");
+    fgets(in,10,stdin);
+    i=atoi(in);
+  };
+  if(i==2)score=computer();
+  while(score <=20){
+    score=score+user();
+    if(score>=20) {printf(" YOU WIN !!\n ");break;};
+    score=score+computer();
+    if(score>=20) {printf(" I WIN !! \n ");break;};
+ };
+return(0);
+};

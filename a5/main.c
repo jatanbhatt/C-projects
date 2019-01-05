@@ -1,59 +1,77 @@
-/* MvM, 20 Game */
-
 #include <stdio.h>
 #include <stdlib.h>
-#include <time.h>
+#include <math.h>
 
-int  score;   /* Globals */
-char in[20];
+#define SIZE 4800
 
-int user(void)
+typedef struct measurement{
+	float x[SIZE];
+	float y[SIZE];
+	float z[SIZE];
+} sensor_data;
+
+void read_data(sensor_data* d)
 {
- int i=0;
- while(i!=1 && i!=2){
-    printf("We are at %-2d, add 1 or 2 ? ",score);
-    fgets(in,10,stdin);
-    i=atoi(in);
-  };
- return(i);
-};
+	FILE* file;
+	int n;
+	float val_x, val_y, val_z;
 
+	n=0;
+	file=fopen("LDB.txt","r");
+	while(n<SIZE){
+		fscanf(file,"%f\t%f\t%f", &val_x, &val_y, &val_z);
+		d->x[n] = val_x;
+		d->y[n] = val_y;
+		d->z[n] = val_z;
+		n++;
+	}
+	fclose(file);
+}
 
-// Given current score return 1 or 2
-int computer(void)
+float find_max_axis(float* readings)
 {
+	float max = 0;
+	for (int n = 0; n < SIZE; n++) {
+		if (fabsf(readings[n]) > fabsf(max)) max = readings[n];
+	}
+	return max;
+}
 
-    int i;
-    int rem = score % 3;
+float find_max_plane(float* readings_a, float* readings_b)
+{
+	float max = 0;
+	float val;
+	for (int n = 0; n < SIZE; n++) {
+		val = sqrt(readings_a[n]*readings_a[n]+readings_b[n]*readings_b[n]);
+		if (val > max) max = val;
+	}
+	return max;
+}
 
-    if (rem == 0) i = 2;
-    else if (rem == 1) i = 1;
-    else i = rand() % 2 + 1;
 
-    printf("Computer adds %d\n",i);
-    return(i);
-};
-
+int powe(int n,int m)
+{
+if(n==0)return(1);
+return(m*powe(n,m-1));
+}
 
 int main(void)
 {
-  int i;
-  srand(time(NULL));// Init random
-  setvbuf(stdout, NULL, _IONBF, 0);// THIS LINE IS FOR WINDOWS ECLIPSE
-  printf(" Who says first 20 \n \n");
-  score=0;
-  i=0;
-  while(i!=1 && i!=2){
-    printf("Who goes first: you=1 computer=2 ? ");
-    fgets(in,10,stdin);
-    i=atoi(in);
-  };
-  if(i==2)score=computer();
-  while(score <=20){
-    score=score+user();
-    if(score>=20) {printf(" YOU WIN !!\n ");break;};
-    score=score+computer();
-    if(score>=20) {printf(" I WIN !! \n ");break;};
- };
-return(0);
-};
+	sensor_data data;
+	read_data(&data);
+
+	float max_x = find_max_axis(data.x);
+	float max_y = find_max_axis(data.y);
+	float max_z = find_max_axis(data.z);
+
+	printf("Max X: %f\n", max_x);
+	printf("Max Y: %f\n", max_y);
+	printf("Max Z: %f\n", max_z);
+
+	float max_xy = find_max_plane(data.x, data.y);
+
+	printf("Max XY: %f\n", max_xy);
+	int x = powe(3,2);
+	printf("power: %d\n", x);
+	return(0);
+}

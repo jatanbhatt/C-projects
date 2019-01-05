@@ -1,77 +1,99 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <math.h>
+#include <string.h>
 
-#define SIZE 4800
+#define SIZE 1024
 
-typedef struct measurement{
-	float x[SIZE];
-	float y[SIZE];
-	float z[SIZE];
-} sensor_data;
+typedef struct student {
+	int number;
+	char name[32];
+} student;
 
-void read_data(sensor_data* d)
+student d[SIZE];
+int numStudents = 0;
+
+int findStudent(int number) {
+	for (int n = 0 ; n < numStudents; n++) {
+		if (number == d[n].number) return n;
+	}
+	return -1;
+}
+
+int read_data(const char* fname)
 {
-	FILE* file;
-	int n;
-	float val_x, val_y, val_z;
+	FILE* file = fopen(fname,"r");
+	if (file == 0) printf("File not found");
+	// search variables
+	int number;
+	char name[32];
+	int n = 0;
+	while(n < SIZE) {
+		// if we don't find 2 data entries, we've reached end of file
+		if (fscanf(file,"%d %s", &number, name) != 2){
+			break;
+		}
 
-	n=0;
-	file=fopen("LDB.txt","r");
-	while(n<SIZE){
-		fscanf(file,"%f\t%f\t%f", &val_x, &val_y, &val_z);
-		d->x[n] = val_x;
-		d->y[n] = val_y;
-		d->z[n] = val_z;
-		n++;
+		int duplicate = findStudent(number);
+		if (duplicate != -1) {
+			// output information if duplicate found
+			printf("Duplicate ID:%d\n", number);
+			printf("Student 1:%s\n", d[duplicate].name);
+			printf("Student 2:%s\n", name);
+		}
+		else {
+			// copy values of holding variables
+			d[n].number = number;
+			strcpy(d[n].name, name);
+			// increase index count and total student count (used in findStudent)
+			n++;
+			numStudents = n;
+		}
+	}
+	fclose(file);
+	return (0);
+}
+
+void swap(const int index1, const int index2) {
+
+	student temp;
+	temp = d[index1];
+	d[index1] = d[index2];
+	d[index2] = temp;
+}
+
+void sort(void) {
+
+	for(int n = 0; n < numStudents ; n++) {
+    	for(int i = 0 ; i < numStudents - 1 ; i++) {
+			if(strcmp(d[i].name, d[i+1].name) > 0) {
+				swap(i, i+1);
+        	}
+    	}
+	}
+}
+
+void groups(void){
+	int half = numStudents/2;
+	printf("Group 1: %s - %s\n",d[0].name, d[half-1].name);
+	printf("Group 2: %s - %s\n",d[half].name, d[numStudents-1].name);
+}
+
+void writeData(const char* fname,int start,int end){
+	FILE* file = fopen(fname,"w");
+	for(int i=start; i<end; i++) {
+		char sentence[7+1+32+1];
+		sprintf(sentence, "%d %s\n", d[i].number, d[i].name);
+		fputs(sentence, file);
 	}
 	fclose(file);
 }
 
-float find_max_axis(float* readings)
-{
-	float max = 0;
-	for (int n = 0; n < SIZE; n++) {
-		if (fabsf(readings[n]) > fabsf(max)) max = readings[n];
-	}
-	return max;
-}
-
-float find_max_plane(float* readings_a, float* readings_b)
-{
-	float max = 0;
-	float val;
-	for (int n = 0; n < SIZE; n++) {
-		val = sqrt(readings_a[n]*readings_a[n]+readings_b[n]*readings_b[n]);
-		if (val > max) max = val;
-	}
-	return max;
-}
-
-
-int powe(int n,int m)
-{
-if(n==0)return(1);
-return(m*powe(n,m-1));
-}
-
 int main(void)
 {
-	sensor_data data;
-	read_data(&data);
-
-	float max_x = find_max_axis(data.x);
-	float max_y = find_max_axis(data.y);
-	float max_z = find_max_axis(data.z);
-
-	printf("Max X: %f\n", max_x);
-	printf("Max Y: %f\n", max_y);
-	printf("Max Z: %f\n", max_z);
-
-	float max_xy = find_max_plane(data.x, data.y);
-
-	printf("Max XY: %f\n", max_xy);
-	int x = powe(3,2);
-	printf("power: %d\n", x);
+	read_data("students.txt");
+	printf("Number of Students Enrolled: %d\n", numStudents);
+	sort();
+	groups();
+	writeData("output.txt",0,115);
 	return(0);
 }

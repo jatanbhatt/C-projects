@@ -2,98 +2,107 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define SIZE 1024
-
 typedef struct student {
 	int number;
 	char name[32];
+	struct student* next;
 } student;
 
-student d[SIZE];
+student* head;
+
 int numStudents = 0;
 
-int findStudent(int number) {
-	for (int n = 0 ; n < numStudents; n++) {
-		if (number == d[n].number) return n;
+student* findStudent (int number) {
+
+	student* currStudent = head;
+	if (currStudent == NULL) return NULL;
+	if (currStudent->number == number) return currStudent;
+	while (currStudent->next != NULL)
+	{
+		currStudent = currStudent->next;
+		if (currStudent->number == number) return currStudent;
 	}
-	return -1;
+return NULL;
+
 }
 
-int read_data(const char* fname)
-{
+student* read_data(const char* fname) {
+
 	FILE* file = fopen(fname,"r");
 	if (file == 0) printf("File not found");
-	// search variables
 	int number;
 	char name[32];
-	int n = 0;
-	while(n < SIZE) {
-		// if we don't find 2 data entries, we've reached end of file
-		if (fscanf(file,"%d %s", &number, name) != 2){
-			break;
-		}
+	while (fscanf(file,"%d %s", &number, name) == 2) {
 
-		int duplicate = findStudent(number);
-		if (duplicate != -1) {
-			// output information if duplicate found
-			printf("Duplicate ID:%d\n", number);
-			printf("Student 1:%s\n", d[duplicate].name);
+		student* duplicate = findStudent(number);
+		if (duplicate != NULL) {
+			printf("Duplicate ID:%d\n", duplicate->number);
+			printf("Student 1:%s\n", duplicate->name);
 			printf("Student 2:%s\n", name);
 		}
 		else {
-			// copy values of holding variables
-			d[n].number = number;
-			strcpy(d[n].name, name);
-			// increase index count and total student count (used in findStudent)
-			n++;
-			numStudents = n;
+
+		student* tempStudent = (student*)malloc(sizeof(student));
+		tempStudent->number = number;
+		strcpy(tempStudent->name, name);
+		tempStudent->next = head;
+		head = tempStudent;
+
+		numStudents++;
 		}
 	}
+
 	fclose(file);
 	return (0);
 }
 
-void swap(const int index1, const int index2) {
+void swap (student*a,student*b) {
 
-	student temp;
-	temp = d[index1];
-	d[index1] = d[index2];
-	d[index2] = temp;
+    char temp[32];
+    strcpy(temp,a->name);
+    strcpy(a->name,b->name);
+    strcpy(b->name,temp);
 }
 
 void sort(void) {
 
-	for(int n = 0; n < numStudents ; n++) {
-    	for(int i = 0 ; i < numStudents - 1 ; i++) {
-			if(strcmp(d[i].name, d[i+1].name) > 0) {
-				swap(i, i+1);
-        	}
-    	}
-	}
+	int check;
+	student*curr;
+    student*last = NULL;
+    do {
+		curr = head;
+		check = 0;
+        while (curr->next != last) {
+			int test = strcmp(curr->name,curr->next->name);
+            if (test > 0) {
+                swap(curr,curr->next);
+                check = 1;
+            }
+            curr = curr->next;
+        }
+        last = curr;
+    }
+    while (check);
 }
 
-void groups(void){
+student* indexStudent(int index) {
+	student*tempStudent = head;
+	for (int n = 1; n < numStudents - index; n++) tempStudent = tempStudent->next;
+	return tempStudent;
+}
+
+void groups(void) {
+
 	int half = numStudents/2;
-	printf("Group 1: %s - %s\n",d[0].name, d[half-1].name);
-	printf("Group 2: %s - %s\n",d[half].name, d[numStudents-1].name);
+	printf("Group 1: A - %s\n",indexStudent(half)->name);
+	printf("Group 2: %s - Z\n",indexStudent(half)->next->name);
 }
 
-void writeData(const char* fname,int start,int end){
-	FILE* file = fopen(fname,"w");
-	for(int i=start; i<end; i++) {
-		char sentence[7+1+32+1];
-		sprintf(sentence, "%d %s\n", d[i].number, d[i].name);
-		fputs(sentence, file);
-	}
-	fclose(file);
-}
+int main(void) {
 
-int main(void)
-{
 	read_data("students.txt");
 	printf("Number of Students Enrolled: %d\n", numStudents);
 	sort();
 	groups();
-	writeData("output.txt",0,115);
 	return(0);
 }
